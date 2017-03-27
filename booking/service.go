@@ -4,6 +4,7 @@ package booking
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/marcusolsson/goddd/cargo"
@@ -55,6 +56,7 @@ func (s *service) AssignCargoToRoute(id cargo.TrackingID, itinerary cargo.Itiner
 
 	c, err := s.cargos.Find(id)
 	if err != nil {
+		fmt.Printf("Unable to find cargo %s in assigning cargo to route, error: ", id, err.Error())
 		return err
 	}
 
@@ -132,6 +134,7 @@ func (s *service) RequestPossibleRoutesForCargo(id cargo.TrackingID) []cargo.Iti
 
 	c, err := s.cargos.Find(id)
 	if err != nil {
+		fmt.Printf("Unable to find cargo %s in RequestPossibleRoutesForCargo, error: %s", id, err.Error())
 		return []cargo.Itinerary{}
 	}
 

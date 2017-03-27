@@ -3,6 +3,7 @@ package routing
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/url"
 	"time"
@@ -28,6 +29,7 @@ func (s proxyService) FetchRoutesForSpecification(rs cargo.RouteSpecification) [
 		To:   string(rs.Destination),
 	})
 	if err != nil {
+		fmt.Printf("Unable to fetch routes endpoint for rs: %v, error: %s", rs, err.Error())
 		return []cargo.Itinerary{}
 	}
 
