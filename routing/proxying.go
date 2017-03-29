@@ -29,7 +29,7 @@ func (s proxyService) FetchRoutesForSpecification(rs cargo.RouteSpecification) [
 		To:   string(rs.Destination),
 	})
 	if err != nil {
-		fmt.Printf("Unable to fetch routes endpoint for rs: %v, error: %s", rs, err.Error())
+		fmt.Printf("Unable to fetch routes endpoint for rs: %v, error: %s\n", rs, err.Error())
 		return []cargo.Itinerary{}
 	}
 

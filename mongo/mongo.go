@@ -14,6 +14,17 @@ type cargoRepository struct {
 	session *mgo.Session
 }
 
+func (r *cargoRepository) Remove(cargo *cargo.Cargo) error {
+	sess := r.session.Copy()
+	defer sess.Close()
+
+	c := sess.DB(r.db).C("cargo")
+
+	err := c.Remove(bson.M{"trackingid": cargo.TrackingID})
+
+	return err
+}
+
 func (r *cargoRepository) Store(cargo *cargo.Cargo) error {
 	sess := r.session.Copy()
 	defer sess.Close()

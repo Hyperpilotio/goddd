@@ -21,6 +21,13 @@ func (r *cargoRepository) Store(c *cargo.Cargo) error {
 	return nil
 }
 
+func (r *cargoRepository) Remove(c *cargo.Cargo) error {
+	r.mtx.Lock()
+	defer r.mtx.Unlock()
+	delete(r.cargos, c.TrackingID)
+	return nil
+}
+
 func (r *cargoRepository) Find(id cargo.TrackingID) (*cargo.Cargo, error) {
 	r.mtx.RLock()
 	defer r.mtx.RUnlock()

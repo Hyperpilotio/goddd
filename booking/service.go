@@ -21,6 +21,9 @@ type Service interface {
 	// routed.
 	BookNewCargo(origin location.UNLocode, destination location.UNLocode, deadline time.Time) (cargo.TrackingID, error)
 
+	// Deletes existing Cargo
+	UnbookCargo(cargo.TrackingID) error
+
 	// LoadCargo returns a read model of a cargo.
 	LoadCargo(id cargo.TrackingID) (Cargo, error)
 
@@ -56,7 +59,7 @@ func (s *service) AssignCargoToRoute(id cargo.TrackingID, itinerary cargo.Itiner
 
 	c, err := s.cargos.Find(id)
 	if err != nil {
-		fmt.Printf("Unable to find cargo %s in assigning cargo to route, error: ", id, err.Error())
+		fmt.Printf("Unable to find cargo %s in assigning cargo to route, error: \n", id, err.Error())
 		return err
 	}
 
@@ -84,6 +87,17 @@ func (s *service) BookNewCargo(origin, destination location.UNLocode, deadline t
 	}
 
 	return c.TrackingID, nil
+}
+
+func (s *service) UnbookCargo(id cargo.TrackingID) error {
+	rs := cargo.RouteSpecification{}
+	c := cargo.New(id, rs)
+
+	if err := s.cargos.Remove(c); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *service) LoadCargo(id cargo.TrackingID) (Cargo, error) {
@@ -134,7 +148,7 @@ func (s *service) RequestPossibleRoutesForCargo(id cargo.TrackingID) []cargo.Iti
 
 	c, err := s.cargos.Find(id)
 	if err != nil {
-		fmt.Printf("Unable to find cargo %s in RequestPossibleRoutesForCargo, error: %s", id, err.Error())
+		fmt.Printf("Unable to find cargo %s in RequestPossibleRoutesForCargo, error: %s\n", id, err.Error())
 		return []cargo.Itinerary{}
 	}
 
