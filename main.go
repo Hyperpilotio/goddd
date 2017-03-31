@@ -38,10 +38,11 @@ const (
 
 func main() {
 	var (
-		addr   = envString("PORT", defaultPort)
-		rsurl  = envString("ROUTINGSERVICE_URL", defaultRoutingServiceURL)
-		dburl  = envString("MONGODB_URL", defaultMongoDBURL)
-		dbname = envString("DB_NAME", defaultDBName)
+		addr             = envString("PORT", defaultPort)
+		rsurl            = envString("ROUTINGSERVICE_URL", defaultRoutingServiceURL)
+		dburl            = envString("MONGODB_URL", defaultMongoDBURL)
+		dbname           = envString("DB_NAME", defaultDBName)
+		mongoMaxPoolSize = envString("MONGO_MAXPOOLSIZE", "60")
 
 		httpAddr          = flag.String("http.addr", ":"+addr, "HTTP listen address")
 		routingServiceURL = flag.String("service.routing", rsurl, "routing service URL")
@@ -73,7 +74,7 @@ func main() {
 		voyages = inmem.NewVoyageRepository()
 		handlingEvents = inmem.NewHandlingEventRepository()
 	} else {
-		session, err := mgo.Dial(*mongoDBURL)
+		session, err := mgo.Dial(*mongoDBURL + "?maxPoolSize=" + mongoMaxPoolSize)
 		if err != nil {
 			panic(err)
 		}
@@ -81,9 +82,18 @@ func main() {
 
 		session.SetMode(mgo.Monotonic, true)
 
-		cargos, _ = mongo.NewCargoRepository(*databaseName, session)
-		locations, _ = mongo.NewLocationRepository(*databaseName, session)
-		voyages, _ = mongo.NewVoyageRepository(*databaseName, session)
+		cargos, err = mongo.NewCargoRepository(*databaseName, session)
+		if err != nil {
+			panic(err)
+		}
+		locations, err = mongo.NewLocationRepository(*databaseName, session)
+		if err != nil {
+			panic(err)
+		}
+		voyages, err = mongo.NewVoyageRepository(*databaseName, session)
+		if err != nil {
+			panic(err)
+		}
 		handlingEvents = mongo.NewHandlingEventRepository(*databaseName, session)
 	}
 
