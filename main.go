@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"sync"
 	"syscall"
 	"time"
@@ -38,11 +39,12 @@ const (
 
 func main() {
 	var (
-		addr             = envString("PORT", defaultPort)
-		rsurl            = envString("ROUTINGSERVICE_URL", defaultRoutingServiceURL)
-		dburl            = envString("MONGODB_URL", defaultMongoDBURL)
-		dbname           = envString("DB_NAME", defaultDBName)
-		mongoMaxPoolSize = envString("MONGO_MAXPOOLSIZE", "60")
+		addr                 = envString("PORT", defaultPort)
+		rsurl                = envString("ROUTINGSERVICE_URL", defaultRoutingServiceURL)
+		dburl                = envString("MONGODB_URL", defaultMongoDBURL)
+		dbname               = envString("DB_NAME", defaultDBName)
+		mongoMaxPoolSize     = envString("MONGO_MAXPOOLSIZE", "60")
+		bookingSummaryMaxAge = envInt("BOOKING_MAXAGE", 15)
 
 		httpAddr          = flag.String("http.addr", ":"+addr, "HTTP listen address")
 		routingServiceURL = flag.String("service.routing", rsurl, "routing service URL")
@@ -132,6 +134,7 @@ func main() {
 			Subsystem: "booking_service",
 			Name:      "request_latency_microseconds",
 			Help:      "Total duration of requests in microseconds.",
+			MaxAge:    time.Second * time.Duration(bookingSummaryMaxAge),
 		}, fieldKeys),
 		bs,
 	)
@@ -219,6 +222,19 @@ func envString(env, fallback string) string {
 		return fallback
 	}
 	return e
+}
+
+func envInt(env string, fallback int) int {
+	e := os.Getenv(env)
+	if e == "" {
+		return fallback
+	}
+	v, err := strconv.Atoi(e)
+	if err != nil {
+		return fallback
+	}
+
+	return v
 }
 
 func storeTestData(r cargo.Repository) {
