@@ -37,14 +37,15 @@ type unbookCargoRequest struct {
 }
 
 type unbookCargoResponse struct {
-	Err error `json:"error,omitempty"`
+	Icon *cargo.CargoIcon `json:"icon, omitempty"`
+	Err  error            `json:"error,omitempty"`
 }
 
 func makeUnbookCargoEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(unbookCargoRequest)
-		err := s.UnbookCargo(req.ID)
-		return unbookCargoResponse{Err: err}, nil
+		icon, err := s.UnbookCargo(req.ID)
+		return unbookCargoResponse{Icon: icon, Err: err}, nil
 	}
 }
 

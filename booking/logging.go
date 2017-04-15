@@ -19,7 +19,7 @@ func NewLoggingService(logger log.Logger, s Service) Service {
 	return &loggingService{logger, s}
 }
 
-func (s *loggingService) UnbookCargo(id cargo.TrackingID) (err error) {
+func (s *loggingService) UnbookCargo(id cargo.TrackingID) (icon *cargo.CargoIcon, err error) {
 	defer func(begin time.Time) {
 		s.logger.Log(
 			"method", "unbook",

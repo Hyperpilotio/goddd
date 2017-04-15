@@ -5,6 +5,9 @@ package booking
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/marcusolsson/goddd/cargo"
@@ -14,6 +17,7 @@ import (
 
 // ErrInvalidArgument is returned when one or more arguments are invalid.
 var ErrInvalidArgument = errors.New("invalid argument")
+var r = rand.New(rand.NewSource(99))
 
 // Service is the interface that provides booking methods.
 type Service interface {
@@ -22,7 +26,7 @@ type Service interface {
 	BookNewCargo(origin location.UNLocode, destination location.UNLocode, deadline time.Time) (cargo.TrackingID, error)
 
 	// Deletes existing Cargo
-	UnbookCargo(cargo.TrackingID) error
+	UnbookCargo(cargo.TrackingID) (*cargo.CargoIcon, error)
 
 	// LoadCargo returns a read model of a cargo.
 	LoadCargo(id cargo.TrackingID) (Cargo, error)
@@ -50,6 +54,7 @@ type service struct {
 	locations      location.Repository
 	handlingEvents cargo.HandlingEventRepository
 	routingService routing.Service
+	icons          []*cargo.CargoIcon
 }
 
 func (s *service) AssignCargoToRoute(id cargo.TrackingID, itinerary cargo.Itinerary) error {
@@ -89,15 +94,23 @@ func (s *service) BookNewCargo(origin, destination location.UNLocode, deadline t
 	return c.TrackingID, nil
 }
 
-func (s *service) UnbookCargo(id cargo.TrackingID) error {
+func (s *service) pickIcon() *cargo.CargoIcon {
+	if len(s.icons) == 0 {
+		return nil
+	}
+
+	return s.icons[r.Intn(len(s.icons))]
+}
+
+func (s *service) UnbookCargo(id cargo.TrackingID) (*cargo.CargoIcon, error) {
 	rs := cargo.RouteSpecification{}
 	c := cargo.New(id, rs)
 
 	if err := s.cargos.Remove(c); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return s.pickIcon(), nil
 }
 
 func (s *service) LoadCargo(id cargo.TrackingID) (Cargo, error) {
@@ -176,11 +189,29 @@ func (s *service) Locations() []Location {
 
 // NewService creates a booking service with necessary dependencies.
 func NewService(cargos cargo.Repository, locations location.Repository, events cargo.HandlingEventRepository, rs routing.Service) Service {
+	icons := []*cargo.CargoIcon{}
+	infos, err := ioutil.ReadDir("/booking/icons")
+	if err != nil {
+		fmt.Printf("Wasn't able to read icons directory: %s\n", err.Error())
+	} else {
+		for _, info := range infos {
+			if strings.HasSuffix(info.Name(), ".jpg") {
+				bytes, err := ioutil.ReadFile("/booking/icons/" + info.Name())
+				if err != nil {
+					fmt.Printf("Wasn't able to read icon file %s: %s\n", info.Name(), err.Error())
+				} else {
+					icons = append(icons, &cargo.CargoIcon{Data: bytes})
+				}
+			}
+		}
+	}
+
 	return &service{
 		cargos:         cargos,
 		locations:      locations,
 		handlingEvents: events,
 		routingService: rs,
+		icons:          icons,
 	}
 }
 
