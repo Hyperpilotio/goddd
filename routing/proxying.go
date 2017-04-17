@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/afex/hystrix-go/hystrix"
 	"github.com/go-kit/kit/circuitbreaker"
 	"github.com/go-kit/kit/endpoint"
 	kithttp "github.com/go-kit/kit/transport/http"
@@ -62,6 +63,11 @@ func NewProxyingMiddleware(ctx context.Context, proxyURL string) ServiceMiddlewa
 	return func(next Service) Service {
 		var e endpoint.Endpoint
 		e = makeFetchRoutesEndpoint(ctx, proxyURL)
+		hystrix.ConfigureCommand("fetch-routes", hystrix.CommandConfig{
+			Timeout:               2000,
+			MaxConcurrentRequests: 1000,
+			ErrorPercentThreshold: 50,
+		})
 		e = circuitbreaker.Hystrix("fetch-routes")(e)
 		return proxyService{ctx, e, next}
 	}
