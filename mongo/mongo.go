@@ -1,8 +1,11 @@
 package mongo
 
 import (
+	"fmt"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"os"
+	"time"
 
 	"github.com/marcusolsson/goddd/cargo"
 	"github.com/marcusolsson/goddd/location"
@@ -12,6 +15,20 @@ import (
 type cargoRepository struct {
 	db      string
 	session *mgo.Session
+}
+
+func timeTrack(start time.Time, name string) {
+	elapsed := time.Since(start)
+	fmt.Printf("%s took %s", name, elapsed)
+}
+
+type timeCargoRepository struct {
+	cargo *cargoRepository
+}
+
+func (r *timeCargoRepository) Remove(cargo *cargo.Cargo) error {
+	defer timeTrack(time.Now(), "cargo Remove")
+	return r.cargo.Remove(cargo)
 }
 
 func (r *cargoRepository) Remove(cargo *cargo.Cargo) error {
@@ -25,6 +42,11 @@ func (r *cargoRepository) Remove(cargo *cargo.Cargo) error {
 	return err
 }
 
+func (r *timeCargoRepository) Store(cargo *cargo.Cargo) error {
+	defer timeTrack(time.Now(), "cargo Store")
+	return r.cargo.Store(cargo)
+}
+
 func (r *cargoRepository) Store(cargo *cargo.Cargo) error {
 	sess := r.session.Copy()
 	defer sess.Close()
@@ -34,6 +56,11 @@ func (r *cargoRepository) Store(cargo *cargo.Cargo) error {
 	_, err := c.Upsert(bson.M{"trackingid": cargo.TrackingID}, bson.M{"$set": cargo})
 
 	return err
+}
+
+func (r *timeCargoRepository) Find(id cargo.TrackingID) (*cargo.Cargo, error) {
+	defer timeTrack(time.Now(), "cargo Find")
+	return r.cargo.Find(id)
 }
 
 func (r *cargoRepository) Find(id cargo.TrackingID) (*cargo.Cargo, error) {
@@ -51,6 +78,11 @@ func (r *cargoRepository) Find(id cargo.TrackingID) (*cargo.Cargo, error) {
 	}
 
 	return &result, nil
+}
+
+func (r *timeCargoRepository) FindAll() []*cargo.Cargo {
+	defer timeTrack(time.Now(), "cargo FindAll")
+	return r.cargo.FindAll()
 }
 
 func (r *cargoRepository) FindAll() []*cargo.Cargo {
@@ -91,12 +123,27 @@ func NewCargoRepository(db string, session *mgo.Session) (cargo.Repository, erro
 		return nil, err
 	}
 
+	if os.Getenv("TIME_MONGO") == "1" {
+		return &timeCargoRepository{
+			cargo: r,
+		}, nil
+	}
+
 	return r, nil
 }
 
 type locationRepository struct {
 	db      string
 	session *mgo.Session
+}
+
+type timeLocationRepository struct {
+	location *locationRepository
+}
+
+func (r *timeLocationRepository) Find(locode location.UNLocode) (*location.Location, error) {
+	defer timeTrack(time.Now(), "location Find")
+	return r.location.Find(locode)
 }
 
 func (r *locationRepository) Find(locode location.UNLocode) (*location.Location, error) {
@@ -114,6 +161,11 @@ func (r *locationRepository) Find(locode location.UNLocode) (*location.Location,
 	}
 
 	return &result, nil
+}
+
+func (r *timeLocationRepository) FindAll() []*location.Location {
+	defer timeTrack(time.Now(), "location FindAll")
+	return r.location.FindAll()
 }
 
 func (r *locationRepository) FindAll() []*location.Location {
@@ -178,12 +230,27 @@ func NewLocationRepository(db string, session *mgo.Session) (location.Repository
 		r.store(l)
 	}
 
+	if os.Getenv("TIME_MONGO") == "1" {
+		return &timeLocationRepository{
+			location: r,
+		}, nil
+	}
+
 	return r, nil
 }
 
 type voyageRepository struct {
 	db      string
 	session *mgo.Session
+}
+
+type timeVoyageRepository struct {
+	voyage *voyageRepository
+}
+
+func (r *timeVoyageRepository) Find(voyageNumber voyage.Number) (*voyage.Voyage, error) {
+	defer timeTrack(time.Now(), "voyage Find")
+	return r.voyage.Find(voyageNumber)
 }
 
 func (r *voyageRepository) Find(voyageNumber voyage.Number) (*voyage.Voyage, error) {
@@ -253,12 +320,27 @@ func NewVoyageRepository(db string, session *mgo.Session) (voyage.Repository, er
 		r.store(v)
 	}
 
+	if os.Getenv("TIME_MONGO") == "1" {
+		return &timeVoyageRepository{
+			voyage: r,
+		}, nil
+	}
+
 	return r, nil
 }
 
 type handlingEventRepository struct {
 	db      string
 	session *mgo.Session
+}
+
+type timeHandlingEventRepository struct {
+	event *handlingEventRepository
+}
+
+func (r *timeHandlingEventRepository) Store(e cargo.HandlingEvent) {
+	defer timeTrack(time.Now(), "event Store")
+	r.event.Store(e)
 }
 
 func (r *handlingEventRepository) Store(e cargo.HandlingEvent) {
@@ -268,6 +350,11 @@ func (r *handlingEventRepository) Store(e cargo.HandlingEvent) {
 	c := sess.DB(r.db).C("handling_event")
 
 	_ = c.Insert(e)
+}
+
+func (r *timeHandlingEventRepository) QueryHandlingHistory(id cargo.TrackingID) cargo.HandlingHistory {
+	defer timeTrack(time.Now(), "event QueryHandlingHistory")
+	return r.event.QueryHandlingHistory(id)
 }
 
 func (r *handlingEventRepository) QueryHandlingHistory(id cargo.TrackingID) cargo.HandlingHistory {
@@ -284,8 +371,16 @@ func (r *handlingEventRepository) QueryHandlingHistory(id cargo.TrackingID) carg
 
 // NewHandlingEventRepository returns a new instance of a MongoDB handling event repository.
 func NewHandlingEventRepository(db string, session *mgo.Session) cargo.HandlingEventRepository {
-	return &handlingEventRepository{
+	r := &handlingEventRepository{
 		db:      db,
 		session: session,
 	}
+
+	if os.Getenv("TIME_MONGO") == "1" {
+		return &timeHandlingEventRepository{
+			event: r,
+		}
+	}
+
+	return r
 }
