@@ -71,13 +71,11 @@ func main() {
 	)
 
 	if *inmemory {
-		fmt.Printf("Using inmem as backend\n")
 		cargos = inmem.NewCargoRepository()
 		locations = inmem.NewLocationRepository()
 		voyages = inmem.NewVoyageRepository()
 		handlingEvents = inmem.NewHandlingEventRepository()
 	} else {
-		fmt.Printf("Using mongo as backend\n")
 		session, err := mgo.Dial(*mongoDBURL + "?maxPoolSize=" + mongoMaxPoolSize)
 		if err != nil {
 			panic(err)

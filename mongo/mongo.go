@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"os"
 	"time"
 
 	"github.com/marcusolsson/goddd/cargo"
@@ -18,7 +19,7 @@ type cargoRepository struct {
 
 func timeTrack(start time.Time, name string) {
 	elapsed := time.Since(start)
-	fmt.Printf("%s took %s\n", name, elapsed)
+	fmt.Printf("%s took %s", name, elapsed)
 }
 
 type timeCargoRepository struct {
@@ -122,9 +123,13 @@ func NewCargoRepository(db string, session *mgo.Session) (cargo.Repository, erro
 		return nil, err
 	}
 
-	return &timeCargoRepository{
-		cargo: r,
-	}, nil
+	if os.Getenv("TIME_MONGO") == "1" {
+		return &timeCargoRepository{
+			cargo: r,
+		}, nil
+	}
+
+	return r, nil
 }
 
 type locationRepository struct {
@@ -225,9 +230,13 @@ func NewLocationRepository(db string, session *mgo.Session) (location.Repository
 		r.store(l)
 	}
 
-	return &timeLocationRepository{
-		location: r,
-	}, nil
+	if os.Getenv("TIME_MONGO") == "1" {
+		return &timeLocationRepository{
+			location: r,
+		}, nil
+	}
+
+	return r, nil
 }
 
 type voyageRepository struct {
@@ -311,9 +320,13 @@ func NewVoyageRepository(db string, session *mgo.Session) (voyage.Repository, er
 		r.store(v)
 	}
 
-	return &timeVoyageRepository{
-		voyage: r,
-	}, nil
+	if os.Getenv("TIME_MONGO") == "1" {
+		return &timeVoyageRepository{
+			voyage: r,
+		}, nil
+	}
+
+	return r, nil
 }
 
 type handlingEventRepository struct {
@@ -363,7 +376,11 @@ func NewHandlingEventRepository(db string, session *mgo.Session) cargo.HandlingE
 		session: session,
 	}
 
-	return &timeHandlingEventRepository{
-		event: r,
+	if os.Getenv("TIME_MONGO") == "1" {
+		return &timeHandlingEventRepository{
+			event: r,
+		}
 	}
+
+	return r
 }
