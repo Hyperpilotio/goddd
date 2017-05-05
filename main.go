@@ -121,7 +121,7 @@ func main() {
 
 	var bs booking.Service
 	bs = booking.NewService(cargos, locations, handlingEvents, rs)
-	bs = booking.NewLoggingService(log.NewContext(logger).With("component", "booking"), bs)
+	//bs = booking.NewLoggingService(log.NewContext(logger).With("component", "booking"), bs)
 	bs = booking.NewInstrumentingService(
 		kitprometheus.NewCounterFrom(stdprometheus.CounterOpts{
 			Namespace: "api",
@@ -141,7 +141,7 @@ func main() {
 
 	var ts tracking.Service
 	ts = tracking.NewService(cargos, handlingEvents)
-	ts = tracking.NewLoggingService(log.NewContext(logger).With("component", "tracking"), ts)
+	//ts = tracking.NewLoggingService(log.NewContext(logger).With("component", "tracking"), ts)
 	ts = tracking.NewInstrumentingService(
 		kitprometheus.NewCounterFrom(stdprometheus.CounterOpts{
 			Namespace: "api",
@@ -160,7 +160,7 @@ func main() {
 
 	var hs handling.Service
 	hs = handling.NewService(handlingEvents, handlingEventFactory, handlingEventHandler)
-	hs = handling.NewLoggingService(log.NewContext(logger).With("component", "handling"), hs)
+	//hs = handling.NewLoggingService(log.NewContext(logger).With("component", "handling"), hs)
 	hs = handling.NewInstrumentingService(
 		kitprometheus.NewCounterFrom(stdprometheus.CounterOpts{
 			Namespace: "api",
