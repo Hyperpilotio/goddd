@@ -26,7 +26,7 @@ type Service interface {
 	BookNewCargo(origin location.UNLocode, destination location.UNLocode, deadline time.Time) (cargo.TrackingID, error)
 
 	// Deletes existing Cargo
-	UnbookCargo(cargo.TrackingID) (*cargo.CargoIcon, error)
+	UnbookCargo(cargo.TrackingID) error
 
 	// LoadCargo returns a read model of a cargo.
 	LoadCargo(id cargo.TrackingID) (Cargo, error)
@@ -102,15 +102,11 @@ func (s *service) pickIcon() *cargo.CargoIcon {
 	return s.icons[r.Intn(len(s.icons))]
 }
 
-func (s *service) UnbookCargo(id cargo.TrackingID) (*cargo.CargoIcon, error) {
+func (s *service) UnbookCargo(id cargo.TrackingID) error {
 	rs := cargo.RouteSpecification{}
 	c := cargo.New(id, rs)
 
-	if err := s.cargos.Remove(c); err != nil {
-		return nil, err
-	}
-
-	return s.pickIcon(), nil
+	return s.cargos.Remove(c)
 }
 
 func (s *service) LoadCargo(id cargo.TrackingID) (Cargo, error) {

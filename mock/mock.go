@@ -16,6 +16,9 @@ type CargoRepository struct {
 
 	FindAllFn      func() []*cargo.Cargo
 	FindAllInvoked bool
+
+	RemoveFn      func(c *cargo.Cargo) error
+	RemoveInvoked bool
 }
 
 // Store calls the StoreFn.
@@ -34,6 +37,12 @@ func (r *CargoRepository) Find(id cargo.TrackingID) (*cargo.Cargo, error) {
 func (r *CargoRepository) FindAll() []*cargo.Cargo {
 	r.FindAllInvoked = true
 	return r.FindAllFn()
+}
+
+// Remove calls the RemoveFn.
+func (r *CargoRepository) Remove(c *cargo.Cargo) error {
+	r.RemoveInvoked = true
+	return r.RemoveFn(c)
 }
 
 // LocationRepository is a mock location repository.
