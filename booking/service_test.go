@@ -190,7 +190,6 @@ func TestLoadCargo(t *testing.T) {
 			},
 		}, nil
 	}
-
 	s := NewService(&cargos, nil, nil, nil)
 
 	c, err := s.LoadCargo("test_id")
@@ -223,6 +222,11 @@ func TestLoadCargo(t *testing.T) {
 
 type mockCargoRepository struct {
 	cargo *cargo.Cargo
+}
+
+func (r *mockCargoRepository) Remove(cargo *cargo.Cargo) error {
+	r.cargo = nil
+	return nil
 }
 
 func (r *mockCargoRepository) Store(c *cargo.Cargo) error {
