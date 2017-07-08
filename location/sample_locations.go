@@ -11,6 +11,8 @@ var (
 	DEHAM UNLocode = "DEHAM"
 	NLRTM UNLocode = "NLRTM"
 	FIHEL UNLocode = "FIHEL"
+
+	SAMPLE_LOCATIONS = []UNLocode{SESTO, AUMEL, CNHKG, USNYC, USCHI, JNTKO, DEHAM, NLRTM, FIHEL}
 )
 
 // Sample locations.

@@ -17,8 +17,15 @@ import (
 	"github.com/marcusolsson/goddd/location"
 )
 
+var PADDING_STRING string
+
 // MakeHandler returns a handler for the booking service.
 func MakeHandler(ctx context.Context, bs Service, logger kitlog.Logger) http.Handler {
+	// Roughly 30kb
+	for i := 0; i < 30*1024; i++ {
+		PADDING_STRING += "a"
+	}
+
 	opts := []kithttp.ServerOption{
 		kithttp.ServerErrorLogger(logger),
 		kithttp.ServerErrorEncoder(encodeError),

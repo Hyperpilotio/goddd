@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"os"
 	"os/signal"
@@ -238,22 +239,17 @@ func envInt(env string, fallback int) int {
 }
 
 func storeTestData(r cargo.Repository) {
-	test1 := cargo.New("FTL456", cargo.RouteSpecification{
-		Origin:          location.AUMEL,
-		Destination:     location.SESTO,
-		ArrivalDeadline: time.Now().AddDate(0, 0, 7),
-	})
-	if err := r.Store(test1); err != nil {
-		panic(err)
-	}
-
-	test2 := cargo.New("ABC123", cargo.RouteSpecification{
-		Origin:          location.SESTO,
-		Destination:     location.CNHKG,
-		ArrivalDeadline: time.Now().AddDate(0, 0, 14),
-	})
-	if err := r.Store(test2); err != nil {
-		panic(err)
+	locationsLength := len(location.SAMPLE_LOCATIONS)
+	for i := 0; i < 200; i++ {
+		cargoId := cargo.TrackingID("FTL456" + strconv.Itoa(i))
+		test1 := cargo.New(cargoId, cargo.RouteSpecification{
+			Origin:          location.SAMPLE_LOCATIONS[rand.Intn(locationsLength)],
+			Destination:     location.SAMPLE_LOCATIONS[rand.Intn(locationsLength)],
+			ArrivalDeadline: time.Now().AddDate(0, 0, 7),
+		})
+		if err := r.Store(test1); err != nil {
+			panic(err)
+		}
 	}
 }
 
