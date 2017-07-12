@@ -23,10 +23,6 @@ type Cargo struct {
 	Delivery           Delivery
 }
 
-type CargoIcon struct {
-	Data []byte
-}
-
 // SpecifyNewRoute specifies a new route for this cargo.
 func (c *Cargo) SpecifyNewRoute(rs RouteSpecification) {
 	c.RouteSpecification = rs

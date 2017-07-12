@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"os"
 	"time"
 
 	"context"
@@ -18,17 +17,8 @@ import (
 	"github.com/marcusolsson/goddd/location"
 )
 
-var PADDING_STRING string
-
 // MakeHandler returns a handler for the booking service.
 func MakeHandler(ctx context.Context, bs Service, logger kitlog.Logger) http.Handler {
-	if os.Getenv("NO_PADDING") == "" {
-		// Roughly 30kb
-		for i := 0; i < 30*1024; i++ {
-			PADDING_STRING += "a"
-		}
-	}
-
 	opts := []kithttp.ServerOption{
 		kithttp.ServerErrorLogger(logger),
 		kithttp.ServerErrorEncoder(encodeError),

@@ -5,9 +5,7 @@ package booking
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
-	"strings"
 	"time"
 
 	"github.com/marcusolsson/goddd/cargo"
@@ -54,7 +52,6 @@ type service struct {
 	locations      location.Repository
 	handlingEvents cargo.HandlingEventRepository
 	routingService routing.Service
-	icons          []*cargo.CargoIcon
 }
 
 func (s *service) AssignCargoToRoute(id cargo.TrackingID, itinerary cargo.Itinerary) error {
@@ -92,14 +89,6 @@ func (s *service) BookNewCargo(origin, destination location.UNLocode, deadline t
 	}
 
 	return c.TrackingID, nil
-}
-
-func (s *service) pickIcon() *cargo.CargoIcon {
-	if len(s.icons) == 0 {
-		return nil
-	}
-
-	return s.icons[r.Intn(len(s.icons))]
 }
 
 func (s *service) UnbookCargo(id cargo.TrackingID) error {
@@ -185,29 +174,11 @@ func (s *service) Locations() []Location {
 
 // NewService creates a booking service with necessary dependencies.
 func NewService(cargos cargo.Repository, locations location.Repository, events cargo.HandlingEventRepository, rs routing.Service) Service {
-	icons := []*cargo.CargoIcon{}
-	infos, err := ioutil.ReadDir("/booking/icons")
-	if err != nil {
-		fmt.Printf("Wasn't able to read icons directory: %s\n", err.Error())
-	} else {
-		for _, info := range infos {
-			if strings.HasSuffix(info.Name(), ".jpg") {
-				bytes, err := ioutil.ReadFile("/booking/icons/" + info.Name())
-				if err != nil {
-					fmt.Printf("Wasn't able to read icon file %s: %s\n", info.Name(), err.Error())
-				} else {
-					icons = append(icons, &cargo.CargoIcon{Data: bytes})
-				}
-			}
-		}
-	}
-
 	return &service{
 		cargos:         cargos,
 		locations:      locations,
 		handlingEvents: events,
 		routingService: rs,
-		icons:          icons,
 	}
 }
 

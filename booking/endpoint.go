@@ -18,9 +18,8 @@ type bookCargoRequest struct {
 }
 
 type bookCargoResponse struct {
-	ID      cargo.TrackingID `json:"tracking_id,omitempty"`
-	Err     error            `json:"error,omitempty"`
-	Padding string           `json:"padding,omitempty"`
+	ID  cargo.TrackingID `json:"tracking_id,omitempty"`
+	Err error            `json:"error,omitempty"`
 }
 
 func (r bookCargoResponse) error() error { return r.Err }
@@ -29,7 +28,7 @@ func makeBookCargoEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(bookCargoRequest)
 		id, err := s.BookNewCargo(req.Origin, req.Destination, req.ArrivalDeadline)
-		return bookCargoResponse{ID: id, Err: err, Padding: PADDING_STRING}, nil
+		return bookCargoResponse{ID: id, Err: err}, nil
 	}
 }
 
@@ -38,15 +37,14 @@ type unbookCargoRequest struct {
 }
 
 type unbookCargoResponse struct {
-	Err     error  `json:"error,omitempty"`
-	Padding string `json:"padding,omitempty"`
+	Err error `json:"error,omitempty"`
 }
 
 func makeUnbookCargoEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(unbookCargoRequest)
 		err := s.UnbookCargo(req.ID)
-		return unbookCargoResponse{Err: err, Padding: PADDING_STRING}, nil
+		return unbookCargoResponse{Err: err}, nil
 	}
 }
 
@@ -55,9 +53,8 @@ type loadCargoRequest struct {
 }
 
 type loadCargoResponse struct {
-	Cargo   *Cargo `json:"cargo,omitempty"`
-	Err     error  `json:"error,omitempty"`
-	Padding string `json:"padding,omitempty"`
+	Cargo *Cargo `json:"cargo,omitempty"`
+	Err   error  `json:"error,omitempty"`
 }
 
 func (r loadCargoResponse) error() error { return r.Err }
@@ -66,7 +63,7 @@ func makeLoadCargoEndpoint(bs Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(loadCargoRequest)
 		c, err := bs.LoadCargo(req.ID)
-		return loadCargoResponse{Cargo: &c, Err: err, Padding: PADDING_STRING}, nil
+		return loadCargoResponse{Cargo: &c, Err: err}, nil
 	}
 }
 
@@ -75,9 +72,8 @@ type requestRoutesRequest struct {
 }
 
 type requestRoutesResponse struct {
-	Routes  []cargo.Itinerary `json:"routes,omitempty"`
-	Err     error             `json:"error,omitempty"`
-	Padding string            `json:"padding,omitempty"`
+	Routes []cargo.Itinerary `json:"routes,omitempty"`
+	Err    error             `json:"error,omitempty"`
 }
 
 func (r requestRoutesResponse) error() error { return r.Err }
@@ -86,7 +82,7 @@ func makeRequestRoutesEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(requestRoutesRequest)
 		itin := s.RequestPossibleRoutesForCargo(req.ID)
-		return requestRoutesResponse{Routes: itin, Err: nil, Padding: PADDING_STRING}, nil
+		return requestRoutesResponse{Routes: itin, Err: nil}, nil
 	}
 }
 
@@ -96,8 +92,7 @@ type assignToRouteRequest struct {
 }
 
 type assignToRouteResponse struct {
-	Err     error  `json:"error,omitempty"`
-	Padding string `json:"padding,omitempty"`
+	Err error `json:"error,omitempty"`
 }
 
 func (r assignToRouteResponse) error() error { return r.Err }
@@ -106,7 +101,7 @@ func makeAssignToRouteEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(assignToRouteRequest)
 		err := s.AssignCargoToRoute(req.ID, req.Itinerary)
-		return assignToRouteResponse{Err: err, Padding: PADDING_STRING}, nil
+		return assignToRouteResponse{Err: err}, nil
 	}
 }
 
@@ -151,12 +146,11 @@ type listLocationsRequest struct {
 type listLocationsResponse struct {
 	Locations []Location `json:"locations,omitempty"`
 	Err       error      `json:"error,omitempty"`
-	Padding   string     `json:"padding,omitempty"`
 }
 
 func makeListLocationsEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		_ = request.(listLocationsRequest)
-		return listLocationsResponse{Locations: s.Locations(), Err: nil, Padding: PADDING_STRING}, nil
+		return listLocationsResponse{Locations: s.Locations(), Err: nil}, nil
 	}
 }

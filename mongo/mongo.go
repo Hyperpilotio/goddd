@@ -1,13 +1,27 @@
 package mongo
 
 import (
+	"fmt"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"os"
+	"time"
 
 	"github.com/marcusolsson/goddd/cargo"
 	"github.com/marcusolsson/goddd/location"
 	"github.com/marcusolsson/goddd/voyage"
 )
+
+type Garbage struct {
+	Garbage string
+}
+
+var GARBAGE_CARGO Garbage
+
+func timed(start time.Time, method string) {
+	elapsed := time.Since(start)
+	fmt.Printf("%s took %s\n", method, elapsed)
+}
 
 type cargoRepository struct {
 	db      string
@@ -15,17 +29,24 @@ type cargoRepository struct {
 }
 
 func (r *cargoRepository) Remove(cargo *cargo.Cargo) error {
+	start := time.Now()
+	defer timed(start, "Removing a cargo")
+
 	sess := r.session.Copy()
 	defer sess.Close()
 
 	c := sess.DB(r.db).C("cargo")
 
 	err := c.Remove(bson.M{"trackingid": cargo.TrackingID})
+	c.Remove(bson.M{"trackingid_g": cargo.TrackingID})
 
 	return err
 }
 
 func (r *cargoRepository) Store(cargo *cargo.Cargo) error {
+	start := time.Now()
+	defer timed(start, "Storing a cargo")
+
 	sess := r.session.Copy()
 	defer sess.Close()
 
@@ -33,14 +54,21 @@ func (r *cargoRepository) Store(cargo *cargo.Cargo) error {
 
 	_, err := c.Upsert(bson.M{"trackingid": cargo.TrackingID}, bson.M{"$set": cargo})
 
+	c.Upsert(bson.M{"trackingid_g": cargo.TrackingID}, bson.M{"$set": GARBAGE_CARGO})
+
 	return err
 }
 
 func (r *cargoRepository) Find(id cargo.TrackingID) (*cargo.Cargo, error) {
+	start := time.Now()
+	defer timed(start, "Finding a single cargo")
+
 	sess := r.session.Copy()
 	defer sess.Close()
 
 	c := sess.DB(r.db).C("cargo")
+
+	c.Find(bson.M{"trackingid_g": id}).One(&Garbage{})
 
 	var result cargo.Cargo
 	if err := c.Find(bson.M{"trackingid": id}).One(&result); err != nil {
@@ -56,19 +84,31 @@ func (r *cargoRepository) Find(id cargo.TrackingID) (*cargo.Cargo, error) {
 func (r *cargoRepository) FindAll() []*cargo.Cargo {
 	sess := r.session.Copy()
 	defer sess.Close()
+	sess.SetBatch(300)
 
 	c := sess.DB(r.db).C("cargo")
 
 	var result []*cargo.Cargo
+	start := time.Now()
+	defer timed(start, "Find all cargos")
 	if err := c.Find(bson.M{}).All(&result); err != nil {
+		fmt.Println("Found error finding all cargos:" + err.Error())
 		return []*cargo.Cargo{}
 	}
+	fmt.Printf("Found %d cargos\n", len(result))
 
 	return result
 }
 
 // NewCargoRepository returns a new instance of a MongoDB cargo repository.
 func NewCargoRepository(db string, session *mgo.Session) (cargo.Repository, error) {
+	if os.Getenv("NO_PADDING") == "" {
+		// Roughly 10kb
+		for i := 0; i < 60*1024; i++ {
+			GARBAGE_CARGO.Garbage += "a"
+		}
+	}
+
 	r := &cargoRepository{
 		db:      db,
 		session: session,
@@ -100,6 +140,9 @@ type locationRepository struct {
 }
 
 func (r *locationRepository) Find(locode location.UNLocode) (*location.Location, error) {
+	start := time.Now()
+	defer timed(start, "Find a location")
+
 	sess := r.session.Copy()
 	defer sess.Close()
 
@@ -117,6 +160,9 @@ func (r *locationRepository) Find(locode location.UNLocode) (*location.Location,
 }
 
 func (r *locationRepository) FindAll() []*location.Location {
+	start := time.Now()
+	defer timed(start, "Find all locations")
+
 	sess := r.session.Copy()
 	defer sess.Close()
 
@@ -131,6 +177,9 @@ func (r *locationRepository) FindAll() []*location.Location {
 }
 
 func (r *locationRepository) store(l *location.Location) error {
+	start := time.Now()
+	defer timed(start, "Saving a location")
+
 	sess := r.session.Copy()
 	defer sess.Close()
 
@@ -187,6 +236,9 @@ type voyageRepository struct {
 }
 
 func (r *voyageRepository) Find(voyageNumber voyage.Number) (*voyage.Voyage, error) {
+	start := time.Now()
+	defer timed(start, "Find a voyage")
+
 	sess := r.session.Copy()
 	defer sess.Close()
 
@@ -204,6 +256,9 @@ func (r *voyageRepository) Find(voyageNumber voyage.Number) (*voyage.Voyage, err
 }
 
 func (r *voyageRepository) store(v *voyage.Voyage) error {
+	start := time.Now()
+	defer timed(start, "Storing a voyage")
+
 	sess := r.session.Copy()
 	defer sess.Close()
 
@@ -262,6 +317,9 @@ type handlingEventRepository struct {
 }
 
 func (r *handlingEventRepository) Store(e cargo.HandlingEvent) {
+	start := time.Now()
+	defer timed(start, "Storing a handle event")
+
 	sess := r.session.Copy()
 	defer sess.Close()
 
@@ -271,6 +329,9 @@ func (r *handlingEventRepository) Store(e cargo.HandlingEvent) {
 }
 
 func (r *handlingEventRepository) QueryHandlingHistory(id cargo.TrackingID) cargo.HandlingHistory {
+	start := time.Now()
+	defer timed(start, "Querying handle history for single cargo")
+
 	sess := r.session.Copy()
 	defer sess.Close()
 
